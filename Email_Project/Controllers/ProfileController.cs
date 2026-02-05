@@ -79,9 +79,7 @@ namespace Email_Project.Controllers
             var monthStart = new DateTime(now.Year, now.Month, 1);
             var nextMonthStart = monthStart.AddMonths(1);
 
-            // -----------------------------
-            // KPI COUNTS (THIS MONTH)
-            // -----------------------------
+            
             ViewBag.IncomingCount = await _context.Messages.CountAsync(x =>
                 x.ReceiverEmail == userMail &&
                 !x.IsTrash &&
@@ -99,9 +97,7 @@ namespace Email_Project.Controllers
 
             ViewBag.UnreadInfo = ((int)(ViewBag.UnreadCount ?? 0)) > 0 ? "Needs attention" : "All clear";
 
-            // -----------------------------
-            // TOP CONTACT (THIS MONTH)
-            // -----------------------------
+            
             var topContact = await _context.Messages
                 .Where(x =>
                     x.ReceiverEmail == userMail &&
@@ -114,9 +110,6 @@ namespace Email_Project.Controllers
 
             ViewBag.TopContact = string.IsNullOrWhiteSpace(topContact) ? "No contacts yet" : topContact;
 
-            // -----------------------------
-            // TOP CATEGORIES (ALWAYS 4 ROWS, THIS MONTH) ✅ ONLY ONCE
-            // -----------------------------
             var rawCategoryCounts = await _context.Messages
                 .Where(x =>
                     x.ReceiverEmail == userMail &&
@@ -129,11 +122,11 @@ namespace Email_Project.Controllers
 
             var total = rawCategoryCounts.Sum(x => x.Count);
 
-            // DB category map
+            
             var categoryMap = await _context.Categories
                 .ToDictionaryAsync(c => c.CategoryId, c => c.CategoryName);
 
-            // Always 4 rows (fill missing with 0), pick top 4 by Count
+           
             var top4 = categoryMap
                 .Select(c => new
                 {
@@ -152,13 +145,11 @@ namespace Email_Project.Controllers
 
             ViewBag.TopCategories = top4;
 
-            // TopCategory label (from THIS MONTH data)
+          
             var topCatName = top4.FirstOrDefault()?.Name;
             ViewBag.TopCategory = string.IsNullOrWhiteSpace(topCatName) ? "General" : topCatName;
 
-            // -----------------------------
-            // TRAFFIC (DAILY / WEEKLY / MONTHLY)
-            // -----------------------------
+            
             var twelveMonthsAgo = now.AddMonths(-12).Date;
 
             var trafficMessages = await _context.Messages
@@ -180,7 +171,7 @@ namespace Email_Project.Controllers
             bool IsSent(string sender) =>
                 string.Equals(sender, userMail, StringComparison.OrdinalIgnoreCase);
 
-            // DAILY (LAST 30 DAYS)
+           
             var dayPoints = Enumerable.Range(0, 30)
                 .Select(i => now.Date.AddDays(-29 + i))
                 .ToList();
@@ -197,7 +188,7 @@ namespace Email_Project.Controllers
                 .Select(d => trafficMessages.Count(m => IsSent(m.SenderEmail) && m.SendDate.Date == d))
                 .ToList();
 
-            // WEEKLY (LAST 12 WEEKS)
+           
             static DateTime StartOfWeekMonday(DateTime dt)
             {
                 int diff = (7 + (int)dt.DayOfWeek - (int)DayOfWeek.Monday) % 7;
@@ -224,7 +215,7 @@ namespace Email_Project.Controllers
                     m.SendDate.Date >= ws && m.SendDate.Date < ws.AddDays(7)))
                 .ToList();
 
-            // MONTHLY (LAST 12 MONTHS)
+           
             var monthStarts = Enumerable.Range(0, 12)
                 .Select(i => new DateTime(now.Year, now.Month, 1).AddMonths(-(11 - i)))
                 .ToList();
