@@ -79,22 +79,34 @@ namespace Email_Project.Controllers
             var monthStart = new DateTime(now.Year, now.Month, 1);
             var nextMonthStart = monthStart.AddMonths(1);
 
-           
+            // -----------------------------
+            // KPI COUNTS (THIS MONTH)
+            // -----------------------------
             ViewBag.IncomingCount = await _context.Messages.CountAsync(x =>
                 x.ReceiverEmail == userMail &&
+                !x.IsTrash &&
                 x.SendDate >= monthStart && x.SendDate < nextMonthStart);
 
             ViewBag.OutgoingCount = await _context.Messages.CountAsync(x =>
                 x.SenderEmail == userMail &&
+                !x.IsTrash &&
                 x.SendDate >= monthStart && x.SendDate < nextMonthStart);
 
             ViewBag.UnreadCount = await _context.Messages.CountAsync(x =>
-                x.ReceiverEmail == userMail && !x.IsRead && !x.IsTrash);
+                x.ReceiverEmail == userMail &&
+                !x.IsTrash &&
+                !x.IsRead);
 
+            ViewBag.UnreadInfo = ((int)(ViewBag.UnreadCount ?? 0)) > 0 ? "Needs attention" : "All clear";
+
+            // -----------------------------
+            // TOP CONTACT (THIS MONTH)
+            // -----------------------------
             var topContact = await _context.Messages
-                .Where(x => x.ReceiverEmail == userMail &&
-                            x.SendDate >= monthStart && x.SendDate < nextMonthStart &&
-                            !x.IsTrash)
+                .Where(x =>
+                    x.ReceiverEmail == userMail &&
+                    !x.IsTrash &&
+                    x.SendDate >= monthStart && x.SendDate < nextMonthStart)
                 .GroupBy(x => x.SenderEmail)
                 .OrderByDescending(g => g.Count())
                 .Select(g => g.Key)
@@ -102,94 +114,145 @@ namespace Email_Project.Controllers
 
             ViewBag.TopContact = string.IsNullOrWhiteSpace(topContact) ? "No contacts yet" : topContact;
 
-            var topCatId = await _context.Messages
-                .Where(x => x.ReceiverEmail == userMail &&
-                            x.SendDate >= monthStart && x.SendDate < nextMonthStart &&
-                            x.CategoryId != null &&
-                            !x.IsTrash)
-                .GroupBy(x => x.CategoryId)
-                .OrderByDescending(g => g.Count())
-                .Select(g => g.Key)
-                .FirstOrDefaultAsync();
-
-            ViewBag.TopCategory = (topCatId ?? 0) switch
-            {
-                1 => "Education",
-                2 => "Social",
-                3 => "Promotion",
-                4 => "Finance",
-                _ => "General"
-            };
-
-            ViewBag.UnreadInfo = (ViewBag.UnreadCount ?? 0) > 0 ? "Needs attention" : "All clear";
-
-            var twelveMonthsAgo = now.AddMonths(-12).Date;
-
-            var messages = await _context.Messages
-                .Where(x => !x.IsTrash &&
-                            x.SendDate >= twelveMonthsAgo &&
-                            (x.ReceiverEmail == userMail || x.SenderEmail == userMail))
-                .Select(x => new { x.SendDate, x.ReceiverEmail, x.SenderEmail })
+            // -----------------------------
+            // TOP CATEGORIES (ALWAYS 4 ROWS, THIS MONTH) ✅ ONLY ONCE
+            // -----------------------------
+            var rawCategoryCounts = await _context.Messages
+                .Where(x =>
+                    x.ReceiverEmail == userMail &&
+                    !x.IsTrash &&
+                    x.CategoryId != null &&
+                    x.SendDate >= monthStart && x.SendDate < nextMonthStart)
+                .GroupBy(x => x.CategoryId!.Value)
+                .Select(g => new { CategoryId = g.Key, Count = g.Count() })
                 .ToListAsync();
 
-            bool IsReceived(dynamic m) => string.Equals((string)m.ReceiverEmail, userMail, StringComparison.OrdinalIgnoreCase);
-            bool IsSent(dynamic m) => string.Equals((string)m.SenderEmail, userMail, StringComparison.OrdinalIgnoreCase);
+            var total = rawCategoryCounts.Sum(x => x.Count);
 
-          
-            var dayLabels = Enumerable.Range(0, 30)
+            // DB category map
+            var categoryMap = await _context.Categories
+                .ToDictionaryAsync(c => c.CategoryId, c => c.CategoryName);
+
+            // Always 4 rows (fill missing with 0), pick top 4 by Count
+            var top4 = categoryMap
+                .Select(c => new
+                {
+                    Name = c.Value,
+                    Count = rawCategoryCounts.FirstOrDefault(x => x.CategoryId == c.Key)?.Count ?? 0
+                })
+                .OrderByDescending(x => x.Count)
+                .ThenBy(x => x.Name)
+                .Take(4)
+                .Select(x => new
+                {
+                    Name = x.Name,
+                    Percentage = total == 0 ? 0 : (int)Math.Round((double)x.Count / total * 100)
+                })
+                .ToList();
+
+            ViewBag.TopCategories = top4;
+
+            // TopCategory label (from THIS MONTH data)
+            var topCatName = top4.FirstOrDefault()?.Name;
+            ViewBag.TopCategory = string.IsNullOrWhiteSpace(topCatName) ? "General" : topCatName;
+
+            // -----------------------------
+            // TRAFFIC (DAILY / WEEKLY / MONTHLY)
+            // -----------------------------
+            var twelveMonthsAgo = now.AddMonths(-12).Date;
+
+            var trafficMessages = await _context.Messages
+                .Where(x =>
+                    !x.IsTrash &&
+                    x.SendDate >= twelveMonthsAgo &&
+                    (x.ReceiverEmail == userMail || x.SenderEmail == userMail))
+                .Select(x => new
+                {
+                    x.SendDate,
+                    x.ReceiverEmail,
+                    x.SenderEmail
+                })
+                .ToListAsync();
+
+            bool IsReceived(string receiver) =>
+                string.Equals(receiver, userMail, StringComparison.OrdinalIgnoreCase);
+
+            bool IsSent(string sender) =>
+                string.Equals(sender, userMail, StringComparison.OrdinalIgnoreCase);
+
+            // DAILY (LAST 30 DAYS)
+            var dayPoints = Enumerable.Range(0, 30)
                 .Select(i => now.Date.AddDays(-29 + i))
                 .ToList();
 
-            var dailyLabels = dayLabels.Select(d => d.ToString("dd MMM", CultureInfo.InvariantCulture)).ToList();
-            var dailyReceived = dayLabels.Select(d => messages.Count(m => IsReceived(m) && ((DateTime)m.SendDate).Date == d)).ToList();
-            var dailySent = dayLabels.Select(d => messages.Count(m => IsSent(m) && ((DateTime)m.SendDate).Date == d)).ToList();
+            var dailyLabels = dayPoints
+                .Select(d => d.ToString("dd MMM", CultureInfo.InvariantCulture))
+                .ToList();
 
-           
-            DateTime StartOfWeek(DateTime dt)
+            var dailyReceived = dayPoints
+                .Select(d => trafficMessages.Count(m => IsReceived(m.ReceiverEmail) && m.SendDate.Date == d))
+                .ToList();
+
+            var dailySent = dayPoints
+                .Select(d => trafficMessages.Count(m => IsSent(m.SenderEmail) && m.SendDate.Date == d))
+                .ToList();
+
+            // WEEKLY (LAST 12 WEEKS)
+            static DateTime StartOfWeekMonday(DateTime dt)
             {
-            
                 int diff = (7 + (int)dt.DayOfWeek - (int)DayOfWeek.Monday) % 7;
                 return dt.Date.AddDays(-diff);
             }
 
             var weekStarts = Enumerable.Range(0, 12)
-                .Select(i => StartOfWeek(now.Date).AddDays(-7 * (11 - i)))
+                .Select(i => StartOfWeekMonday(now.Date).AddDays(-7 * (11 - i)))
                 .ToList();
 
-            var weeklyLabels = weekStarts.Select(w => w.ToString("dd MMM", CultureInfo.InvariantCulture)).ToList();
-            var weeklyReceived = weekStarts.Select(ws =>
-                messages.Count(m => IsReceived(m) &&
-                    ((DateTime)m.SendDate).Date >= ws && ((DateTime)m.SendDate).Date < ws.AddDays(7)))
+            var weeklyLabels = weekStarts
+                .Select(w => w.ToString("dd MMM", CultureInfo.InvariantCulture))
                 .ToList();
 
-            var weeklySent = weekStarts.Select(ws =>
-                messages.Count(m => IsSent(m) &&
-                    ((DateTime)m.SendDate).Date >= ws && ((DateTime)m.SendDate).Date < ws.AddDays(7)))
+            var weeklyReceived = weekStarts
+                .Select(ws => trafficMessages.Count(m =>
+                    IsReceived(m.ReceiverEmail) &&
+                    m.SendDate.Date >= ws && m.SendDate.Date < ws.AddDays(7)))
                 .ToList();
 
-            
+            var weeklySent = weekStarts
+                .Select(ws => trafficMessages.Count(m =>
+                    IsSent(m.SenderEmail) &&
+                    m.SendDate.Date >= ws && m.SendDate.Date < ws.AddDays(7)))
+                .ToList();
+
+            // MONTHLY (LAST 12 MONTHS)
             var monthStarts = Enumerable.Range(0, 12)
                 .Select(i => new DateTime(now.Year, now.Month, 1).AddMonths(-(11 - i)))
                 .ToList();
 
-            var monthlyLabels = monthStarts.Select(ms => ms.ToString("MMM yyyy", CultureInfo.InvariantCulture)).ToList();
-            var monthlyReceived = monthStarts.Select(ms =>
-                messages.Count(m => IsReceived(m) &&
-                    ((DateTime)m.SendDate) >= ms && ((DateTime)m.SendDate) < ms.AddMonths(1)))
+            var monthlyLabels = monthStarts
+                .Select(ms => ms.ToString("MMM yyyy", CultureInfo.InvariantCulture))
                 .ToList();
 
-            var monthlySent = monthStarts.Select(ms =>
-                messages.Count(m => IsSent(m) &&
-                    ((DateTime)m.SendDate) >= ms && ((DateTime)m.SendDate) < ms.AddMonths(1)))
+            var monthlyReceived = monthStarts
+                .Select(ms => trafficMessages.Count(m =>
+                    IsReceived(m.ReceiverEmail) &&
+                    m.SendDate >= ms && m.SendDate < ms.AddMonths(1)))
                 .ToList();
 
-            
+            var monthlySent = monthStarts
+                .Select(ms => trafficMessages.Count(m =>
+                    IsSent(m.SenderEmail) &&
+                    m.SendDate >= ms && m.SendDate < ms.AddMonths(1)))
+                .ToList();
+
             ViewBag.TrafficDaily = JsonSerializer.Serialize(new { labels = dailyLabels, received = dailyReceived, sent = dailySent });
             ViewBag.TrafficWeekly = JsonSerializer.Serialize(new { labels = weeklyLabels, received = weeklyReceived, sent = weeklySent });
             ViewBag.TrafficMonthly = JsonSerializer.Serialize(new { labels = monthlyLabels, received = monthlyReceived, sent = monthlySent });
 
             return View(user);
-        }    
+        }
+
+
 
     }
 }
