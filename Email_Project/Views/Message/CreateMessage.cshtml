@@ -1,0 +1,63 @@
+﻿@model Email_Project.Entities.Message
+
+@{
+    ViewData["Title"] = "Yeni Mesaj";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid py-4">
+    <div class="card border-0 shadow-lg" style="border-radius: 15px;">
+        <div class="card-header bg-white border-0 pt-4">
+            <h5 class="text-primary fw-bold"><i class='bx bx-send me-2'></i>New Message</h5>
+        </div>
+
+        <form asp-action="CreateMessage" method="post" class="card-body p-4">
+            <div class="mb-3">
+                <label class="form-label text-muted fw-bold small">Receive Mail </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class='bx bx-user'></i></span>                 
+                    <input type="email" name="ReceiverEmail" class="form-control bg-light"
+                           placeholder="Receive@mail.com" value="@ViewBag.Receiver" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-muted fw-bold small">Subject</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class='bx bx-info-circle'></i></span>
+                   
+                    <input type="text" name="Subject" class="form-control bg-light"
+                           placeholder="Subject..." value="@ViewBag.Subject" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-muted fw-bold small">Context</label>               
+                <textarea id="summernote" name="MessageDetail" class="form-control">@Html.Raw(ViewBag.Content)</textarea>
+            </div>
+
+            <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                    Send <i class='bx bx-paper-plane ms-1'></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+
+            $('#summernote').summernote({
+                placeholder: 'Write...',
+                tabsize: 2,
+                height: 300,
+                lang: 'tr-TR'
+            });
+        });
+    </script>
+}

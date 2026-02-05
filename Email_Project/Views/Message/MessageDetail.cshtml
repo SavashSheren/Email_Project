@@ -1,0 +1,81 @@
+﻿@model Email_Project.Entities.Message
+
+@{
+    ViewData["Title"] = "MessageDetail";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Subject: @Model.Subject</h4>
+        </div>
+        <div class="card-body">
+            <input type="checkbox" class="msg-check message-checkbox d-none" value="@Model.MessageId" checked />
+
+            <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
+                <div>
+                    <strong>From:</strong> @Model.SenderEmail <br />
+                    <strong>Category:</strong> <span class="badge bg-info text-dark">@Model.Category.CategoryName</span>
+                </div>
+                <div class="text-muted">
+                    <i class="fas fa-calendar-alt"></i> @Model.SendDate.ToString("dd MMM yyyy HH:mm")
+                </div>
+            </div>
+
+            <div class="message-content p-3 bg-light border rounded">
+                <p>@Model.MessageDetail</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        
+        $(document).on('click', '.fa-envelope, .fa-archive, .fa-trash-alt, [id*="Unread"], [id*="Archive"]', function (e) {
+
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            var messageId = parseInt("@Model.MessageId");
+            var btn = $(this);
+            var targetUrl = "";
+
+          
+            var baseUrl = window.location.origin + "/Message/";
+
+            if (btn.hasClass('fa-envelope') || btn.attr('id')?.includes('Unread')) {
+       
+                targetUrl = baseUrl + 'MarkAsUnread';
+            } else if (btn.hasClass('fa-archive') || btn.attr('id')?.includes('Archive')) {
+                targetUrl = baseUrl + 'BulkMoveToArchive';
+            } else if (btn.hasClass('fa-trash') || btn.attr('id')?.includes('Trash')) {
+                targetUrl = baseUrl + 'MoveToTrash';
+            }
+
+            if (targetUrl !== "" && !isNaN(messageId)) {
+                $.ajax({
+                    url: targetUrl,
+                    type: 'POST',
+                  
+                    data: { ids: [messageId] },
+                    success: function (response) {
+                        if (response.success) {
+                           
+                            window.location.href = '/Message/Index';
+                        } else {
+                            alert("Hata: " + response.message);
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error("Hata Detayı:", xhr.responseText);
+                        alert("Sunucuya ulaşılamadı. URL: " + targetUrl);
+                    }
+                });
+            }
+        });
+    });
+</script>

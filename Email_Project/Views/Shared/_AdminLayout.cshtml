@@ -1,0 +1,426 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MailCore | Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-size: 14px;
+            overflow-x: hidden;
+        }
+
+        .sidebar {
+            width: 240px;
+            height: 100vh;
+            position: fixed;
+            background: #1e293b;
+            border-right: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            flex-shrink: 0;
+        }
+
+        .sidebar-nav-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #334155 transparent;
+        }
+
+            .sidebar-nav-container::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .sidebar-nav-container::-webkit-scrollbar-thumb {
+                background-color: #334155;
+                border-radius: 10px;
+            }
+
+        .main-content {
+            margin-left: 240px;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: #1e293b;
+            padding: 10px 25px;
+            border-bottom: 1px solid #334155;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .search-input {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 20px;
+            padding: 5px 20px;
+            width: 300px;
+        }
+
+        .nav-link {
+            color: #94a3b8;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            border-left: 3px solid transparent;
+            transition: 0.3s;
+        }
+
+            .nav-link:hover, .nav-link.active {
+                background: #334155;
+                color: #38bdf8;
+                border-left: 3px solid #38bdf8;
+            }
+
+            .nav-link i {
+                margin-right: 12px;
+                font-size: 18px;
+            }
+
+        .menu-label {
+            padding: 15px 20px 5px;
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .badge-count {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: auto;
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        
+        .user-meta {
+            line-height: 1.2;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="p-4 text-center">
+                <h4 class="text-info fw-bold mb-0"><i class='bx bxs-envelope'></i> MailCORE</h4>
+            </div>
+            <div class="px-3 mb-3">
+                <a href="/Message/CreateMessage" class="btn btn-info w-100 rounded-pill shadow-sm fw-bold">
+                    <i class='bx bx-plus'></i> New Mail
+                </a>
+            </div>
+        </div>
+
+        <div class="sidebar-nav-container">
+            <nav>
+                <a href="/Profile/AdminProfile" class="nav-link"><i class='bx bxs-dashboard'></i> Profile</a>
+
+                <div class="menu-label">Mailbox</div>
+                <a href="/Message/Index" class="nav-link active">
+                    <i class='bx bxs-inbox'></i> Inbox
+                    <span class="badge-count bg-danger">@ViewBag.UnreadMessages</span>
+                </a>
+                <a href="/Message/Starred" class="nav-link">
+                    <i class='bx bxs-star text-warning'></i> Starred
+                    <span class="badge-count bg-warning text-dark">@ViewBag.ImportantMessages</span>
+                </a>
+                <a href="/Message/SentMessages" class="nav-link"><i class='bx bxs-send'></i> Sent</a>
+                <a href="/Message/Archive" class="nav-link">
+                    <i class='bx bx-archive-in'></i> Archive
+                    <span class="badge-count bg-secondary">@ViewBag.ArchiveCount</span>
+                </a>
+                <a href="/Message/Trash" class="nav-link">
+                    <i class='bx bxs-trash'></i> Trash
+                    <span class="badge-count bg-dark">@ViewBag.TrashCount</span>
+                </a>
+
+                <div class="menu-label">Categories</div>
+                <a href="/Message/Category/Education" class="nav-link">
+                    <i class='bx bxs-tag-alt text-primary'></i> Education
+                    <span class="badge-count bg-primary">@ViewBag.EducationCount</span>
+                </a>
+                <a href="/Message/Category/Social" class="nav-link">
+                    <i class='bx bxs-tag-alt text-warning'></i> Social
+                    <span class="badge-count bg-warning text-dark">@ViewBag.SocialCount</span>
+                </a>
+                <a href="/Message/Category/Promotion" class="nav-link">
+                    <i class='bx bxs-tag-alt text-danger'></i> Promotion
+                    <span class="badge-count bg-danger">@ViewBag.PromotionCount</span>
+                </a>
+                <a href="/Message/Category/Finance" class="nav-link">
+                    <i class='bx bxs-tag-alt text-info'></i> Finance
+                    <span class="badge-count bg-info">@ViewBag.FinanceCount</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-footer mt-auto border-top border-secondary p-2">
+            <a href="/Login/Logout" class="nav-link text-danger p-2"><i class='bx bx-log-out'></i> Sign Out</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header class="topbar d-flex justify-content-between align-items-center">
+            <form action="/Message/Search" method="get" class="search-box position-relative">
+                <i class='bx bx-search text-muted position-absolute' style="left: 15px; top: 10px;"></i>
+                <input type="text" name="q" class="search-input ps-5" placeholder="Search emails...">
+            </form>
+            <div class="user-area d-flex align-items-center gap-3">
+                <i class='bx bx-bell fs-4 text-muted cursor-pointer'></i>
+                <div class="d-flex align-items-center gap-2 border-start ps-3 border-secondary">
+                    <div class="user-meta text-end">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <div class="fw-bold small">@User.Identity.Name</div> 
+                            <div class="text-muted" style="font-size: 10px;">Administrator</div>
+                        }
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=@User.Identity.Name&background=38bdf8&color=fff" class="rounded-circle" width="35">
+                    <img src="" class="rounded-circle" width="35">
+                </div>
+            </div>
+        </header>
+
+        <div id="action-bar" class="px-4 mt-4">
+            <div class="bg-white py-2 px-3 border-0 rounded-3 shadow-sm d-flex align-items-center justify-content-between">
+
+                <div class="d-flex align-items-center">
+                    <div class="form-check mb-0 me-3 ms-1">
+                        <input class="form-check-input shadow-none cursor-pointer" type="checkbox" id="checkAll">
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        @* Her sayfada sabit duran Yenile butonu *@
+                        <a href="/Message/Index" class="btn btn-link text-secondary p-2 hover-bg" title="Refresh">
+                            <i class='bx bx-refresh fs-4'></i>
+                        </a>
+
+                        <div class="vr mx-1" style="height: 20px; opacity: 0.1;"></div>
+
+                        @{
+                            // Büyük-küçük harf duyarlılığını kaldırmak için ToLower() ekledik
+                            var currentAction = ViewContext.RouteData.Values["action"]?.ToString()?.ToLower();
+                        }
+
+                        @* --- ARŞİV MANTIĞI --- *@
+                        @if (currentAction == "archive")
+                        {
+                            <button id="btnBulkRestore" class="btn btn-link text-success p-2 hover-bg" title="Restore from Archive">
+                                <i class='bx bx-archive-out fs-4'></i>
+                            </button>
+                        }
+                        else
+                        {
+                            <button id="btnBulkArchive" class="btn btn-link text-secondary p-2 hover-bg" title="Archive">
+                                <i class='bx bx-archive-in fs-4'></i>
+                            </button>
+                        }
+                    
+
+                        @* --- ÇÖP KUTUSU / SİLME MANTIĞI --- *@
+                        @if (currentAction == "trash")
+                        {
+                            @* Trash sayfasındaysak: Geri Yükle ve KALICI SİL *@
+                            <button id="btnBulkRestoreFromTrash" class="btn btn-link text-success p-2 hover-bg" title="Restore to Inbox">
+                                <i class='bx bx-undo fs-4'></i>
+                            </button>
+
+                            <button id="btnBulkDeleteForever" class="btn btn-link text-danger p-2 hover-bg" title="Delete">
+                                <i class='bx bxs-message-square-x fs-4'></i>
+                            </button>
+                        }
+                        else
+                        {
+                            @* Diğer sayfalardaysak: Sadece Çöp Kutusu'na at *@
+                            <button id="btnMoveToTrash" class="btn text-danger">
+                                <i class='bx bx-trash fs-4'></i>
+                            </button>
+                        }
+
+                        <div class="vr mx-1" style="height: 20px; opacity: 0.1;"></div>
+
+                        @* --- OKUNDU/CEVAPLA GRUBU --- *@
+                        <button id="btnMarkAsRead" class="btn btn-light btn-sm border text-primary shadow-sm" title="Mark as Read">
+                            <i class='bx bx-envelope-open fs-5'></i>
+                        </button>
+
+                        <button id="btnMarkAsUnread" class="btn btn-light btn-sm border text-primary shadow-sm" title="Mark as Unread">
+                            <i class='bx bx-envelope fs-5'></i>
+                        </button>
+
+                        @if (ViewData["ShowReplyButtons"] != null && ViewData["ShowReplyButtons"].ToString() == "true")
+                        {
+                            <div class="btn-group shadow-sm ms-1">
+                                @* Burada @Model.Id yerine @Model.MessageId yazıyoruz *@
+                                <a href="/Message/CreateMessage?id=@Model.MessageId" class="btn btn-light btn-sm border text-primary">
+                                    <i class='bx bx-share fs-5'></i> Reply
+                                </a>
+
+                                @* Aynı şekilde burayı da düzeltiyoruz *@
+                                <a href="/Message/CreateMessage?forwardId=@Model.MessageId" class="btn btn-light btn-sm border text-primary">
+                                    <i class='bx bx-share fs-5' style="transform: scaleX(-1);"></i> Fowward
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    @if (Model is IEnumerable<Email_Project.Entities.Message> list)
+                    {
+                        <span class="text-muted small fw-bold">1-50 of @list.Count()</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted small fw-bold">Message Detail Mode</span>
+                    }
+
+                    <div class="d-flex border rounded-2 bg-white">
+                        <button class="btn btn-white btn-sm border-0 px-2 py-1 border-end shadow-none">
+                            <i class='bx bx-chevron-left fs-5'></i>
+                        </button>
+                        <button class="btn btn-white btn-sm border-0 px-2 py-1 shadow-none">
+                            <i class='bx bx-chevron-right fs-5'></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <style>
+            .hover-bg {
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                border-radius: 8px;
+                text-decoration: none !important;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+                .hover-bg:hover {
+                    background-color: #f8fafc;
+                    color: #38bdf8 !important; /* Üstüne gelince MailDash mavisi olsun */
+                    transform: translateY(-1px);
+                }
+
+            .btn-link {
+                border: none;
+            }
+        </style>
+
+        <div class="p-4">
+            @RenderBody()
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // "Tümünü Seç" Checkbox'ı için mantık
+            $('#checkAll').on('change', function () {
+                $('.message-checkbox').prop('checked', $(this).prop('checked'));
+            });
+        });
+                $(document).on('click', '#btnMoveToTrash', function (e) {
+            e.preventDefault();
+
+            // Seçili checkbox'lardaki ID'leri topla
+            let ids = $('.message-checkbox:checked').map(function() {
+                return parseInt($(this).val());
+            }).get();
+
+            if (ids.length === 0) {
+                alert("Are you Sure?");
+                return;
+            }
+
+            // Controller'a gönder
+            $.post("/Message/MoveToTrash", { ids: ids }, function (res) {
+                if (res.success) {
+                    location.reload(); // Sayfayı yenile, çöpe gidenler listeden düşsün
+                } else {
+                    alert("Error.");
+                }
+            });
+        });
+                        $(document).ready(function () {
+            // Tümünü Seç/Kaldır
+            $(document).on('change', '#checkAll', function () {
+                // Alt sayfalardaki tüm checkbox'ları seçer
+                $('.message-checkbox').prop('checked', $(this).prop('checked'));
+            });
+
+            // Ortak ID Toplama Fonksiyonu
+            function getSelectedIds() {
+                let ids = [];
+                // Sayfadaki seçili checkbox'ları döner
+                $('.message-checkbox:checked').each(function() {
+                    let val = $(this).val();
+                    if (val) {
+                        ids.push(parseInt(val));
+                    }
+                });
+                return ids;
+            }
+
+            // OKUNDU YAP
+            $(document).on('click', '#btnMarkAsRead', function (e) {
+                e.preventDefault();
+                let ids = getSelectedIds();
+                if (ids.length === 0) {
+                    alert("Please choose One!");
+                    return;
+                }
+
+                $.post("/Message/MarkAsRead", { ids: ids }, function (res) {
+                    if (res.success) {
+                        location.reload();
+                    } else {
+                        alert("Error: " + (res.message || "Rejected"));
+                    }
+                });
+            });
+
+            // OKUNMADI YAP
+            $(document).on('click', '#btnMarkAsUnread', function (e) {
+                e.preventDefault();
+                let ids = getSelectedIds();
+                if (ids.length === 0) {
+                    alert("Please choose One!");
+                    return;
+                }
+
+                $.post("/Message/MarkAsUnread", { ids: ids }, function (res) {
+                    if (res.success) {
+                        location.reload();
+                    } else {
+                        alert("Error: " + (res.message || "Rejected"));
+                    }
+                });
+            });
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

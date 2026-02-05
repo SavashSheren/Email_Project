@@ -1,0 +1,251 @@
+﻿@model List<Email_Project.Entities.Message>
+@{
+    ViewData["Title"] = "Inbox";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+        <tbody>
+            @if (Model.Count == 0)
+            {
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">
+                        <i class='bx bx-folder-open fs-1 d-block mb-2'></i>
+                        No messages found in your inbox.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in Model)
+                {
+                    <tr class="@(item.IsRead == false ? "unread-row" : "read-row")"
+                        onclick="location.href='/Message/MessageDetail/@item.MessageId'"
+                        style="cursor:pointer;">
+
+                        <td style="width: 40px;" class="ps-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="message-checkbox form-check-input msg-check" value="@item.MessageId" />
+                            </div>
+                        </td>
+
+                        <td style="width: 40px;">
+                            <a href="javascript:void(0);" class="star-btn" data-id="@item.MessageId">
+                                <i class='bx @(item.IsImportant ? "bxs-star text-warning" : "bx-star text-muted") fs-5'></i>
+                            </a>
+                        </td>
+
+                        <td style="width: 180px;">
+                            <div class="text-truncate fw-bold" style="max-width: 180px;">
+                                @{
+                                    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+                                    var userMail = User.Identity.Name; 
+                                }
+
+                                @if (currentAction == "SentMessages")
+                                {
+                                  
+                                    <span class="text-primary">To: </span> 
+                                    @item.ReceiverEmail
+                                }
+                                else if (currentAction == "Starred" && item.SenderEmail == userMail)
+                                {
+                                   
+                                    <span class="text-primary">To: </span> 
+                                    @item.ReceiverEmail
+                                }
+                                else
+                                {
+                                   
+                                    @item.SenderEmail
+                                }
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="d-flex align-items-center">
+                                @if (!item.IsStatus)
+                                {
+                                    <span class="badge bg-secondary me-2" style="font-size: 10px;">INACTIVE</span>
+                                }
+
+                                @if (item.IsTrash)
+                                {
+                                    <i class='bx bx-trash text-muted me-2' title="Trash"></i>
+                                }
+
+                                <span class="subject-text">@item.Subject</span>
+                                <span class="text-muted ms-2 fw-normal content-preview">- @item.MessageDetail</span>
+                            </div>
+                        </td>
+
+                        <td class="text-end pe-4 text-muted small" style="width: 100px;">
+                            @item.SendDate.ToString("HH:mm")
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="row g-4 mt-2">
+    <div class="col-md-4">
+        <div class="glass-card text-center" style="border-bottom: 4px solid #8b5cf6; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <i class='bx bxs-envelope-open text-primary' style="font-size: 50px;"></i>
+            <h5 class="mt-3 text-muted small uppercase fw-bold">Total Messages</h5>
+            <h2 class="display-6 fw-bold">@Model.Count</h2>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="glass-card text-center" style="border-bottom: 4px solid #06b6d4; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <i class='bx bxs-bell-ring text-info' style="font-size: 50px;"></i>
+            <h5 class="mt-3 text-muted small uppercase fw-bold">Unread</h5>
+            <h2 class="display-6 fw-bold text-info">@Model.Count(x => !x.IsRead)</h2>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="glass-card text-center" style="border-bottom: 4px solid #ef4444; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <i class='bx bxs-star text-warning' style="font-size: 50px;"></i>
+            <h5 class="mt-3 text-muted small uppercase fw-bold">Important</h5>
+            <h2 class="display-6 fw-bold text-danger">@Model.Count(x => x.IsImportant)</h2>
+        </div>
+    </div>
+</div>
+
+<style>
+    .unread-row {
+        background-color: #ffffff;
+        font-weight: 700;
+        color: #111c3a;
+    }
+
+    .read-row {
+        background-color: #f8f9fa;
+        font-weight: 400;
+        color: #6c757d;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f1f5ff !important;
+        cursor: pointer;
+    }
+
+    .content-preview {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 450px;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Star button click logic
+        $('.star-btn').click(function (e) {
+            e.stopPropagation(); // Prevents the row click (MessageDetail) from firing
+            var btn = $(this);
+            var msgId = btn.data('id');
+            var icon = btn.find('i');
+
+            $.post('/Message/ToggleStar', { id: msgId }, function (response) {
+                if (response.success) {
+                    // Toggle UI icons based on importance
+                    if (response.isImportant) {
+                        icon.removeClass('bx-star text-muted').addClass('bxs-star text-warning');
+                    } else {
+                        icon.removeClass('bxs-star text-warning').addClass('bx-star text-muted');
+                    }
+                } else {
+                    // Handle unauthorized or not found cases in English
+                    alert("Error: " + response.message);
+                }
+            }).fail(function() {
+                alert("Server error. Please try again later.");
+            });
+        });
+
+        // Checkbox click logic
+        $('.msg-check').click(function (e) {
+            e.stopPropagation(); // Prevents the row click from firing
+        });
+    });
+           $(document).on('click', '#btnBulkArchive', function (e) {
+        e.preventDefault();
+
+        var selectedIds = [];
+       
+        $('.msg-check:checked').each(function () {
+            selectedIds.push(parseInt($(this).val()));
+        });
+
+        console.log("Seçilen ID'ler:", selectedIds); 
+
+        if (selectedIds.length > 0) {
+            $.ajax({
+                url: '/Message/BulkMoveToArchive',
+                type: 'POST',
+                data: { ids: selectedIds }, 
+                success: function (response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert("Error: " + response.message);
+                    }
+                },
+                error: function () {
+                    alert("Server connection error!");
+                }
+            });
+        } else {
+            alert("Please select at least one message!");
+        }
+    });
+     
+    $(document).on('click', '#btnBulkRestore', function (e) {
+        e.preventDefault();
+
+        var selectedIds = [];
+        $('.msg-check:checked').each(function () {
+            selectedIds.push(parseInt($(this).val()));
+        });
+
+        if (selectedIds.length > 0) {
+            $.post('/Message/BulkRestoreFromArchive', { ids: selectedIds }, function (response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert("Error: " + response.message);
+                }
+            });
+        } else {
+            alert("Kanka geri yüklemek için mesaj seçmedin!");
+        }
+    });
+       
+    $(document).on('click', '#btnMoveToTrash', function (e) {
+        e.preventDefault(); 
+
+        var selectedIds = [];
+       
+        $('.msg-check:checked').each(function () {
+            selectedIds.push(parseInt($(this).val()));
+        });
+
+        if (selectedIds.length > 0) {
+           
+            $.post('/Message/MoveToTrash', { ids: selectedIds }, function (response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert("Hata oluştu: " + response.message);
+                }
+            });
+        } else {
+            alert("Lütfen çöpe atmak için en az bir mesaj seç kanka!");
+        }
+    });
+</script>

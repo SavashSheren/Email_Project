@@ -1,0 +1,127 @@
+﻿@model List<Email_Project.Entities.Message>
+    @{
+    ViewData["Title"] = "Çöp Kutusu";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    }
+
+    <div class="container-fluid mt-4">   
+        <div class="card shadow-sm border-0" style="border-radius: 12px;">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                            @foreach (var item in Model)
+                            {
+                            <tr class="message-row align-middle" style="cursor: pointer;" onclick="location.href='/Message/MessageDetail/@item.MessageId'">
+                                <td style="width: 45px;" class="ps-3" onclick="event.stopPropagation();">
+                                    <div class="form-check">
+                                       
+                                        <input type="checkbox" class="message-checkbox form-check-input" value="@item.MessageId">
+                                    </div>
+                                </td>
+                                <td style="width: 40px;" class="text-warning">
+                                    <i class='bx bxs-star fs-5' style="opacity: 0.3;"></i>
+                                </td>
+                                <td style="width: 200px;" class="fw-bold text-primary">
+                                    @item.SenderEmail
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark">@item.Subject</span>
+                                    <span class="text-muted ms-2" style="font-size: 0.9rem;">
+                                        - @(item.MessageDetail?.Length > 60 ? item.MessageDetail.Substring(0, 60) + "..." : item.MessageDetail)
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4 text-muted small">
+                                    @item.SendDate.ToString("HH:mm")
+                                </td>
+                            </tr>
+                            }
+                            }
+                            else
+                            {
+                            <tr><td colspan="5" class="text-center p-5 text-muted">Çöp kutusu boş kanka.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .message-row:hover {
+            background-color: #f8f9fa !important;
+            border-left: 4px solid #0d6efd;
+        }
+
+        .form-check-input {
+            cursor: pointer;
+            border: 1px solid #ced4da !important;
+            width: 1.2em;
+            height: 1.2em;
+        }
+
+        .btn-sm {
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+    </style>
+
+    @section Scripts {
+    <script>
+        $(document).ready(function () {
+            
+            function getSelectedIds() {
+                let ids = [];
+                $('.message-checkbox:checked').each(function () {
+                    let val = $(this).val();
+                    if (val) ids.push(parseInt(val));
+                });
+                return ids;
+            }
+
+           
+            $('#btnBulkRestoreFromTrash').on('click', function (e) {
+                e.preventDefault();
+                let ids = getSelectedIds();
+
+                if (ids.length === 0) {
+                    alert("Kanka önce kutucukları işaretle!");
+                    return;
+                }
+
+                $.post("/Message/RestoreFromTrash", { ids: ids }, function (response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert("Geri yüklenirken bir hata oldu.");
+                    }
+                });
+            });
+
+           
+            $('#btnBulkDeleteForever').on('click', function (e) {
+                e.preventDefault();
+                let ids = getSelectedIds();
+
+                if (ids.length === 0) {
+                    alert("Kanka silinecekleri seçmedin!");
+                    return;
+                }
+
+                if (confirm("Seçili mesajlar mezara gidecek (kalıcı silinecek). Emin misin?")) {
+                    $.post("/Message/PermanentDelete", { ids: ids }, function (response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert("Silme işlemi başarısız.");
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+    }

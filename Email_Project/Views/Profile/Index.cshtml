@@ -1,0 +1,183 @@
+﻿@model Email_Project.Dtos.UserEditDto
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile - @Model.Name</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <style>
+        body {
+            background: #eef2f7;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .edit-profile-card {
+            background: #ffffff;
+            width: 500px;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin: 20px;
+        }
+
+        .header-blue {
+            background: #87ceeb;
+            padding: 30px;
+            color: white;
+            text-align: left;
+        }
+
+            .header-blue h2 {
+                margin: 0;
+                font-size: 28px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .header-blue p {
+                margin: 5px 0 0;
+                font-weight: 300;
+                opacity: 0.9;
+            }
+
+        .form-content {
+            padding: 40px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column; /* Mobilde daha iyi görünür */
+            margin-bottom: 20px;
+        }
+
+            .input-group label {
+                font-weight: 600;
+                color: #555;
+                margin-bottom: 8px;
+                font-size: 14px;
+            }
+
+            .input-group input {
+                padding: 12px 18px;
+                border: 1px solid #d1d1d1;
+                border-radius: 12px;
+                font-family: 'Poppins', sans-serif;
+                font-size: 14px;
+                outline: none;
+                transition: all 0.3s;
+            }
+
+                .input-group input:focus {
+                    border-color: #87ceeb;
+                    box-shadow: 0 0 0 3px rgba(135, 206, 235, 0.2);
+                }
+
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .save-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+            .save-btn:hover {
+                background: #0056b3;
+                transform: translateY(-2px);
+            }
+
+        .back-link {
+            text-decoration: none;
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 10px;
+            transition: color 0.3s;
+        }
+
+            .back-link:hover {
+                color: #333;
+            }
+
+            .back-link i {
+                font-size: 18px;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="edit-profile-card">
+        <div class="header-blue">
+            <h2><i class="fas fa-user-circle"></i> Edit Profile</h2>
+            <p>Update your personal information</p>
+        </div>
+
+        <div class="form-content">
+            <form method="post" enctype="multipart/form-data">
+                <div class="input-group">
+                    <label>Name</label>
+                    <input type="text" asp-for="Name" placeholder="Your Name">
+                </div>
+
+                <div class="input-group">
+                    <label>Surname</label>
+                    <input type="text" asp-for="Surname" placeholder="Your Surname">
+                </div>
+
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" asp-for="Email" placeholder="Email Address">
+                </div>
+
+                <div class="input-group">
+                    <label>Profile Image</label>
+                    <input type="file" asp-for="Image">
+                </div>
+
+                <div class="input-group">
+                    <label>New Password</label>
+                    <input type="password" asp-for="Password" placeholder="Leave blank to keep current">
+                </div>
+
+                <div class="btn-container">
+                    <button type="submit" class="save-btn">Save Changes</button>
+
+                    <a href="/Profile/AdminProfile" class="back-link">
+                        <i class='bx bxs-dashboard'></i> Back to Profile
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
